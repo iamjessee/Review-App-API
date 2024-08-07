@@ -7,34 +7,37 @@ using ReviewApp.Repository;
 
 namespace ReviewApp.Controllers
 {
-
+    // define route and API controller attributes
     [Route("api/[controller]")]
     [ApiController]
     public class CategoryController : Controller
     {
-        private readonly ICategoryRepository _categoryRepository;
-        private readonly IMapper _mapper;
+        private readonly ICategoryRepository _categoryRepository; // repo for category data access
+        private readonly IMapper _mapper; // automapper for DTO conversion
 
+        // constructor for injecting dependencies
         public CategoryController(ICategoryRepository categoryRepository, IMapper mapper)
         {
             _categoryRepository = categoryRepository;
             _mapper = mapper;
         }
 
+        // get all categories
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Category>))]
         public IActionResult GetCategories()
         {
-            var categories = _mapper.Map<List<CategoryDto>>(_categoryRepository.GetCategories());
+            var categories = _mapper.Map<List<CategoryDto>>(_categoryRepository.GetCategories()); // map to DTO
 
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(ModelState); // return bad request if model state is invalid
             }
 
-            return Ok(categories);
+            return Ok(categories); // return categories
         }
 
+        // get category by id
         [HttpGet("{categoryId}")]
         [ProducesResponseType(200, Type = typeof(Category))]
         [ProducesResponseType(400)]
@@ -42,32 +45,34 @@ namespace ReviewApp.Controllers
         {
             if (!_categoryRepository.CategoryExists(categoryId))
             {
-                return NotFound();
+                return NotFound(); // return not found if category does not exist
             }
 
-            var category = _mapper.Map<CategoryDto>(_categoryRepository.GetCategory(categoryId));
+            var category = _mapper.Map<CategoryDto>(_categoryRepository.GetCategory(categoryId)); // map to DTO
 
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(ModelState); // return bad request if model state is invalid
             }
 
-            return Ok(category);
+            return Ok(category); // return category
         }
 
+        // get pokemons by category id
         [HttpGet("pokemon/{categoryId}")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Pokemon>))]
         [ProducesResponseType(400)]
         public IActionResult GetPokemonByCategoryId(int categoryId)
         {
-            var pokemons = _mapper.Map<List<PokemonDto>>(_categoryRepository.GetPokemonBycategory(categoryId));
+            var pokemons = _mapper.Map<List<PokemonDto>>(_categoryRepository.GetPokemonBycategory(categoryId)); // map to DTO
 
             if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(); // return bad request if model state is invalid
             }
 
-            return Ok(pokemons);
+            return Ok(pokemons); // return pokemons
+
         }
     }
 }
