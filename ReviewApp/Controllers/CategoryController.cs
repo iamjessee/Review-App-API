@@ -68,7 +68,7 @@ namespace ReviewApp.Controllers
 
             if (!ModelState.IsValid)
             {
-                return BadRequest(); // return bad request if model state is invalid
+                return BadRequest(ModelState); // return bad request if model state is invalid
             }
 
             return Ok(pokemons); // return pokemons
