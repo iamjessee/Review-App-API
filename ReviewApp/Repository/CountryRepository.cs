@@ -18,39 +18,44 @@ namespace ReviewApp.Repository
 
         public bool CountryExists(int id)
         {
-            return _context.Countries.Any(c => c.Id == id);
+            return _context.Countries.Any(c => c.Id == id); // check if a country with the given id exists
         }
 
         public bool CreateCountry(Country country)
         {
-            _context.Add(country);
-            return Save();
+            _context.Add(country); // add the new country to the context
+            return Save(); // save changes to the database and return true if successful
         }
 
         public ICollection<Country> GetCountries()
         {
-            return _context.Countries.ToList();
+            return _context.Countries.ToList(); // retrieve and return a list of all countries
         }
 
         public Country GetCountry(int id)
         {
-            return _context.Countries.Where(c => c.Id == id).FirstOrDefault();
+            return _context.Countries.Where(c => c.Id == id).FirstOrDefault(); // retrieve and return the country by id, or null if not found
         }
 
         public Country GetCountryByOwner(int ownerId)
         {
-            return _context.Owners.Where(o => o.Id == ownerId).Select(c => c.Country).FirstOrDefault();
+            return _context.Owners
+                .Where(o => o.Id == ownerId) // filter Owners by owner id
+                .Select(c => c.Country) // select the related Country
+                .FirstOrDefault(); // return the country if found, otherwise null
         }
 
         public ICollection<Owner> GetOwnerFromACountry(int countryId)
         {
-            return _context.Owners.Where(c => c.Country.Id == countryId).ToList();
+            return _context.Owners
+                .Where(c => c.Country.Id == countryId) // filter Owners by country id
+                .ToList(); // return the list of Owners
         }
 
         public bool Save()
         {
-            var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
+            var saved = _context.SaveChanges(); // save changes and return the number of affected rows
+            return saved > 0; // return true if any rows were affected, otherwise false
         }
     }
 }

@@ -24,7 +24,7 @@ namespace ReviewApp.Controllers
 
         // get all categories
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Category>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Category>))]
         public IActionResult GetCategories()
         {
             var categories = _mapper.Map<List<CategoryDto>>(_categoryRepository.GetCategories()); // map to DTO
@@ -39,8 +39,8 @@ namespace ReviewApp.Controllers
 
         // get category by id
         [HttpGet("{categoryId}")]
-        [ProducesResponseType(200, Type = typeof(Category))]
-        [ProducesResponseType(400)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Category))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult GetCategory(int categoryId)
         {
             if (!_categoryRepository.CategoryExists(categoryId))
@@ -60,8 +60,9 @@ namespace ReviewApp.Controllers
 
         // get pokemons by category id
         [HttpGet("pokemon/{categoryId}")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Pokemon>))]
-        [ProducesResponseType(400)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Pokemon>))]
+
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult GetPokemonByCategoryId(int categoryId)
         {
             var pokemons = _mapper.Map<List<PokemonDto>>(_categoryRepository.GetPokemonBycategory(categoryId)); // map to DTO
@@ -75,39 +76,49 @@ namespace ReviewApp.Controllers
 
         }
         [HttpPost]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(400)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult CreateCategory([FromBody] CategoryDto categoryCreate)
         {
-            if (categoryCreate == null)
+            try
             {
-                return BadRequest(ModelState);
+                if (categoryCreate == null)
+                {
+                    return BadRequest(ModelState); // return bad request if input is null
+                }
+
+                // check if the category already exists
+                var category = _categoryRepository.GetCategories()
+                    .Where(c => c.Name.Trim().ToUpper() == categoryCreate.Name.TrimEnd().ToUpper())
+                    .FirstOrDefault();
+
+                if (category != null)
+                {
+                    ModelState.AddModelError("", "Category already exists");
+                    return StatusCode(StatusCodes.Status422UnprocessableEntity, ModelState); // return conflict if category exists
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState); // return bad request if model state is invalid
+                }
+
+                var categoryMap = _mapper.Map<Category>(categoryCreate); // map dto to model
+
+                if (!_categoryRepository.CreateCategory(categoryMap))
+                {
+                    ModelState.AddModelError("", "Something went wrong while saving");
+                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState); // return server error if save fails
+                }
+
+                return Ok("Successfully created"); // return success message
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex); // log the exception
+                return StatusCode(StatusCodes.Status500InternalServerError, "Something went wrong while creating the category"); // return server error
             }
 
-            var category = _categoryRepository.GetCategories()
-                .Where(c => c.Name.Trim().ToUpper() == categoryCreate.Name.TrimEnd().ToUpper())
-                .FirstOrDefault();
-
-            if (category != null)
-            {
-                ModelState.AddModelError("", "Category already exists");
-                return StatusCode(422, ModelState);
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var categoryMap = _mapper.Map<Category>(categoryCreate);
-
-            if (!_categoryRepository.CreateCategory(categoryMap))
-            {
-                ModelState.AddModelError("", "Something went wrong while saving");
-                return StatusCode(500, ModelState);
-            }
-
-            return Ok("Successfully created");
         }
     }
 }

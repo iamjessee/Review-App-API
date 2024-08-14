@@ -26,7 +26,7 @@ namespace ReviewApp.Controllers
 
         // get all owners
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Pokemon>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Pokemon>))]
         public IActionResult GetOwners()
         {
             var owners = _mapper.Map<List<OwnerDto>>(_ownerRepository.GetOwners()); // map to DTO
@@ -41,8 +41,8 @@ namespace ReviewApp.Controllers
 
         // get owner by id
         [HttpGet("{ownerId}")]
-        [ProducesResponseType(200, Type = typeof(Pokemon))]
-        [ProducesResponseType(400)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Pokemon))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult GetOwner(int ownerId)
         {
             if (!_ownerRepository.OwnerExists(ownerId))
@@ -62,7 +62,7 @@ namespace ReviewApp.Controllers
 
         // get pokemon by owner
         [HttpGet("{ownerId}/pokemon")]
-        [ProducesResponseType(200, Type = typeof(Pokemon))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Pokemon))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult GetPokemonByOwner(int ownerId)
         {
@@ -80,6 +80,7 @@ namespace ReviewApp.Controllers
             return Ok(owner); // return owner
         }
 
+        // create owner
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -88,8 +89,11 @@ namespace ReviewApp.Controllers
             try
             {
                 if (ownerCreate == null)
-                    return BadRequest(ModelState);
+                {
+                    return BadRequest(ModelState); // return bad request if input is null
+                }
 
+                // check if the owner already exists
                 var owners = _ownerRepository.GetOwners()
                     .Where(c => c.LastName.Trim().ToUpper() == ownerCreate.LastName.TrimEnd().ToUpper())
                     .FirstOrDefault();
@@ -97,28 +101,30 @@ namespace ReviewApp.Controllers
                 if (owners != null)
                 {
                     ModelState.AddModelError("", "Owner already exists");
-                    return StatusCode(StatusCodes.Status422UnprocessableEntity, ModelState);
+                    return StatusCode(StatusCodes.Status422UnprocessableEntity, ModelState); // return conflict if owner exists
                 }
 
                 if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                {
+                    return BadRequest(ModelState); // return bad request if model state is invalid
+                }
 
-                var ownerMap = _mapper.Map<Owner>(ownerCreate);
+                var ownerMap = _mapper.Map<Owner>(ownerCreate); // map dto to model
 
-                ownerMap.Country = _countryRepository.GetCountry(countryId);
+                ownerMap.Country = _countryRepository.GetCountry(countryId); // assign country to owner
 
                 if (!_ownerRepository.CreateOwner(ownerMap))
                 {
                     ModelState.AddModelError("", "Something went wrong while saving");
-                    return StatusCode(500, ModelState);
+                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState); // return server error if save fails
                 }
 
-                return Ok("Successfully created");
+                return Ok("Successfully created"); // return success message
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                return StatusCode(StatusCodes.Status500InternalServerError, "Something went wrong while creating the owner");
+                Console.WriteLine(ex); // log the exception
+                return StatusCode(StatusCodes.Status500InternalServerError, "Something went wrong while creating the owner"); // return server error
             }
         }
     }

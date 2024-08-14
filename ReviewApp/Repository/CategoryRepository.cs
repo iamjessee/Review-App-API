@@ -13,7 +13,7 @@ namespace ReviewApp.Repository
         }
         public bool CategoryExists(int id)
         {
-            return _context.Categories.Any(c => c.Id == id); // return true if category exists, otherwise false
+            return _context.Categories.Any(c => c.Id == id); // check if a category with the given id exists
         }
 
         public bool CreateCategory(Category category)
@@ -26,7 +26,7 @@ namespace ReviewApp.Repository
 
         public ICollection<Category> GetCategories()
         {
-            return _context.Categories.ToList(); // return list of all categories
+            return _context.Categories.ToList(); // retrieve and return a list of all categories
         }
 
         public Category GetCategory(int id)
