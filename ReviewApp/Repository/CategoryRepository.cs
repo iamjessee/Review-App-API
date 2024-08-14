@@ -13,22 +13,40 @@ namespace ReviewApp.Repository
         }
         public bool CategoryExists(int id)
         {
-            return _context.Categories.Any(c => c.Id == id);
+            return _context.Categories.Any(c => c.Id == id); // return true if category exists, otherwise false
+        }
+
+        public bool CreateCategory(Category category)
+        {
+
+            _context.Add(category); // add the new category to the context
+
+            return Save(); // save changes and return true if successful
         }
 
         public ICollection<Category> GetCategories()
         {
-            return _context.Categories.ToList();
+            return _context.Categories.ToList(); // return list of all categories
         }
 
         public Category GetCategory(int id)
         {
-            return _context.Categories.Where(e => e.Id == id).FirstOrDefault();
+            return _context.Categories.Where(e => e.Id == id).FirstOrDefault(); // return the category if found, otherwise null
         }
 
         public ICollection<Pokemon> GetPokemonBycategory(int categoryId)
         {
-            return _context.PokemonCategories.Where(e => e.CategoryId == categoryId).Select(c => c.Pokemon).ToList();
+            return _context.PokemonCategories
+                .Where(e => e.CategoryId == categoryId) // filter by category id
+                .Select(c => c.Pokemon) // select related pokemon
+                .ToList(); // return as a list
+        }
+
+        public bool Save()
+        {
+            var saved = _context.SaveChanges(); // save changes and get the number of affected rows
+            return saved > 0 ? true : false; // return true if any rows were affected, otherwise false
+
         }
     }
 }
