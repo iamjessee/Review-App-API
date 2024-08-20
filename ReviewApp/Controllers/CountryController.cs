@@ -120,5 +120,42 @@ namespace ReviewApp.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "something went wrong while creating the country"); // return server error
             }
         }
+
+        [HttpPut("{countryId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdateCategory(int countryId, [FromBody] CountryDto updateCountry)
+        {
+            if (updateCountry == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (countryId != updateCountry.Id)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!_countryrepository.CountryExists(countryId))
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
+            var countryMap = _mapper.Map<Country>(updateCountry);
+
+            if (!_countryrepository.updateCountry(countryMap))
+            {
+                ModelState.AddModelError(" ", "Something went wrong updating country");
+                return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+            }
+
+            return Ok("Success!");
+        }
     }
 }

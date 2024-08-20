@@ -118,7 +118,43 @@ namespace ReviewApp.Controllers
                 Console.WriteLine(ex); // log the exception
                 return StatusCode(StatusCodes.Status500InternalServerError, "Something went wrong while creating the category"); // return server error
             }
+        }
 
+        [HttpPut("{categoryId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdateCategory(int categoryId, [FromBody] CategoryDto updateCategory)
+        {
+            if (updateCategory == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (categoryId != updateCategory.Id)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!_categoryRepository.CategoryExists(categoryId))
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
+            var categoryMap = _mapper.Map<Category>(updateCategory);
+
+            if (!_categoryRepository.updateCategory(categoryMap))
+            {
+                ModelState.AddModelError(" ", "Something went wrong updating category");
+                return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+            }
+
+            return Ok("Success!");
         }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ReviewApp.Dto;
 using ReviewApp.Interfaces;
 using ReviewApp.Models;
+using ReviewApp.Repository;
 
 
 namespace ReviewApp.Controllers
@@ -126,6 +127,43 @@ namespace ReviewApp.Controllers
                 Console.WriteLine(ex); // log the exception
                 return StatusCode(StatusCodes.Status500InternalServerError, "Something went wrong while creating the owner"); // return server error
             }
+        }
+
+        [HttpPut("{ownerId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdateOwner(int ownerId, [FromBody] OwnerDto updateOwner)
+        {
+            if (updateOwner == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (ownerId != updateOwner.Id)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!_ownerRepository.OwnerExists(ownerId))
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
+            var ownerMap = _mapper.Map<Owner>(updateOwner);
+
+            if (!_ownerRepository.updateOwner(ownerMap))
+            {
+                ModelState.AddModelError(" ", "Something went wrong updating owner");
+                return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+            }
+
+            return Ok("Success!");
         }
     }
 }

@@ -9,6 +9,7 @@ namespace ReviewApp.Interfaces
         ICollection<Review> GetReviewsByReviewer(int reviewerid);
         bool ReviewerExists(int reviewerId);
         bool CreateReviewer(Reviewer reviewer);
+        bool updateReviewer(Reviewer reviewer);
         bool Save();
     }
 }

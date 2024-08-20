@@ -119,5 +119,42 @@ namespace ReviewApp.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "something went wrong while creating the reviewer"); // return server error
             }
         }
+
+        [HttpPut("{reviewerId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdateReviewer(int reviewerId, [FromBody] ReviewerDto updateReviewer)
+        {
+            if (updateReviewer == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (reviewerId != updateReviewer.Id)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!_reviewerRepository.ReviewerExists(reviewerId))
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
+            var reviewerMap = _mapper.Map<Reviewer>(updateReviewer);
+
+            if (!_reviewerRepository.updateReviewer(reviewerMap))
+            {
+                ModelState.AddModelError(" ", "Something went wrong updating reviewer");
+                return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+            }
+
+            return Ok("Success!");
+        }
     }
 }

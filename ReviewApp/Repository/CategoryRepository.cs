@@ -48,5 +48,11 @@ namespace ReviewApp.Repository
             return saved > 0 ? true : false; // return true if any rows were affected, otherwise false
 
         }
+
+        public bool updateCategory(Category category)
+        {
+            _context.Update(category);
+            return Save();
+        }
     }
 }

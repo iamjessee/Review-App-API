@@ -57,5 +57,11 @@ namespace ReviewApp.Repository
             var saved = _context.SaveChanges(); // save changes and return the number of affected rows
             return saved > 0; // return true if any rows were affected, otherwise false
         }
+
+        public bool updateCountry(Country country)
+        {
+            _context.Update(country);
+            return Save();
+        }
     }
 }

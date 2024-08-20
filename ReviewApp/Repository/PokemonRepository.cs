@@ -90,5 +90,11 @@ namespace ReviewApp.Repository
             var saved = _context.SaveChanges(); // save changes and get the number of affected rows
             return saved > 0; // return true if any rows were affected, otherwise false
         }
+
+        public bool UpdatePokemon(int ownerId, int categoryId, Pokemon pokemon)
+        {
+            _context.Update(pokemon);
+            return Save();
+        }
     }
 }

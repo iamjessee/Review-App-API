@@ -13,12 +13,14 @@ namespace ReviewApp.Controllers
     public class PokemonController : Controller
     {
         private readonly IPokemonRepository _pokemonRepository; // repo for data access
+        private readonly IOwnerRepository _ownerRepository;
         private readonly IMapper _mapper; // automapper for DTO conversion
 
         // constructor for injecting dependencies
-        public PokemonController(IPokemonRepository pokemonRepository, IMapper mapper)
+        public PokemonController(IPokemonRepository pokemonRepository, IOwnerRepository ownerRepository, IMapper mapper)
         {
             _pokemonRepository = pokemonRepository;
+            _ownerRepository = ownerRepository;
             _mapper = mapper;
         }
 
@@ -122,6 +124,43 @@ namespace ReviewApp.Controllers
                 Console.WriteLine(ex); // log the exception
                 return StatusCode(StatusCodes.Status500InternalServerError, "Something went wrong while creating the pokemon"); // return server error
             }
+        }
+
+        [HttpPut("{pokeId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdatePokemon(int pokeId, [FromQuery] int ownerId, [FromQuery] int catId, [FromBody] PokemonDto updatePokemon)
+        {
+            if (updatePokemon == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (pokeId != updatePokemon.Id)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!_pokemonRepository.PokemonExists(pokeId))
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
+            var pokemonMap = _mapper.Map<Pokemon>(updatePokemon);
+
+            if (!_pokemonRepository.UpdatePokemon(ownerId, catId, pokemonMap))
+            {
+                ModelState.AddModelError(" ", "Something went wrong updating pokemon");
+                return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+            }
+
+            return Ok("Success!");
         }
     }
 }
