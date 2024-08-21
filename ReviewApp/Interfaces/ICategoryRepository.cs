@@ -10,6 +10,7 @@ namespace ReviewApp.Interfaces
         bool CategoryExists(int id);
         bool CreateCategory(Category category);
         bool updateCategory (Category category);
+        bool DetachCategory(Category category);
         bool Save();
     }
 }

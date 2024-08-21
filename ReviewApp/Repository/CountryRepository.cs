@@ -27,6 +27,12 @@ namespace ReviewApp.Repository
             return Save(); // save changes to the database and return true if successful
         }
 
+        public bool DeleteCountry(Country country)
+        {
+            _context.Remove(country);
+            return Save();
+        }
+
         public ICollection<Country> GetCountries()
         {
             return _context.Countries.ToList(); // retrieve and return a list of all countries

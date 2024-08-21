@@ -45,6 +45,12 @@ namespace ReviewApp.Repository
             return Save(); // save changes to the database and return true if successful
         }
 
+        public bool DeletePokemon(Pokemon pokemon)
+        {
+            _context.Remove(pokemon);
+            return Save();
+        }
+
         public Pokemon GetPokemon(int id)
         {
             return _context.Pokemon

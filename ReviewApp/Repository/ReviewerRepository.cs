@@ -23,6 +23,12 @@ namespace ReviewApp.Repository
             return Save(); // save changes to the database and return true if successful
         }
 
+        public bool DeleteReviewer(Reviewer reviewer)
+        {
+            _context.Remove(reviewer);
+            return Save();
+        }
+
         public Reviewer GetReviewer(int reviewerId)
         {
             return _context.Reviewers

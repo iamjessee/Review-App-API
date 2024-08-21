@@ -11,6 +11,7 @@ namespace ReviewApp.Interfaces
         bool OwnerExists(int ownerId);
         bool CreateOwner(Owner owner);
         bool updateOwner(Owner owner);
+        bool DeleteOwner(Owner owner);
         bool Save();
     }
 }

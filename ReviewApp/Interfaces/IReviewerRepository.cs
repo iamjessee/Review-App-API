@@ -10,6 +10,7 @@ namespace ReviewApp.Interfaces
         bool ReviewerExists(int reviewerId);
         bool CreateReviewer(Reviewer reviewer);
         bool updateReviewer(Reviewer reviewer);
+        bool DeleteReviewer(Reviewer reviewer);
         bool Save();
     }
 }

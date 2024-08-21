@@ -21,7 +21,13 @@ namespace ReviewApp.Repository
 
             _context.Add(category); // add the new category to the context
 
-            return Save(); // save changes and return true if successful
+            return Save();
+        }
+
+        public bool DetachCategory(Category category)
+        {
+            _context.Remove(category); // remove the new category from the context
+            return Save();
         }
 
         public ICollection<Category> GetCategories()

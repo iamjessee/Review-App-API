@@ -19,6 +19,12 @@ namespace ReviewApp.Repository
             return Save(); // save changes to the database and return true if successful
         }
 
+        public bool DeleteOwner(Owner owner)
+        {
+            _context.Remove(owner);
+            return Save();
+        }
+
         public Owner GetOwner(int ownerId)
         {
             return _context.Owners
