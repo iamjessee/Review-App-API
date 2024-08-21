@@ -124,7 +124,7 @@ namespace ReviewApp.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex); // log the exception
+                Console.WriteLine(ex);
                 return StatusCode(StatusCodes.Status500InternalServerError, "Something went wrong while creating the owner"); // return server error
             }
         }
