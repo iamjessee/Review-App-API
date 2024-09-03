@@ -64,7 +64,7 @@ namespace ReviewApp.Repository
             return saved > 0; // return true if any rows were affected, otherwise false
         }
 
-        public bool updateOwner(Owner owner)
+        public bool UpdateOwner(Owner owner)
         {
             _context.Update(owner);
             return Save();

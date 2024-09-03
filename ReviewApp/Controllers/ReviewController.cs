@@ -7,17 +7,15 @@ using ReviewApp.Repository;
 
 namespace ReviewApp.Controllers
 {
-    // define route and API controller attributes
     [Route("api/[controller]")]
     [ApiController]
     public class ReviewController : Controller
     {
-        private readonly IReviewRepository _reviewRepository; // repo for data access
-        private readonly IPokemonRepository _pokemonRepository;
         private readonly IReviewerRepository _reviewerRepository;
-        private readonly IMapper _mapper; // automapper for DTO conversion
+        private readonly IPokemonRepository _pokemonRepository;
+        private readonly IReviewRepository _reviewRepository;
+        private readonly IMapper _mapper;
 
-        // constructor for injecting dependencies
         public ReviewController(IReviewRepository reviewRepository, IPokemonRepository pokemonRepository, IReviewerRepository reviewerRepository, IMapper mapper)
         {
             _reviewRepository = reviewRepository;
@@ -28,163 +26,176 @@ namespace ReviewApp.Controllers
 
         // get all reviews
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Review>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ReviewDto>))]
         public IActionResult GetReviews()
         {
-            var reviews = _mapper.Map<List<ReviewDto>>(_reviewRepository.GetReviews()); // map to DTO
-
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState); // return bad request if model state is invalid
+                var reviews = _mapper.Map<List<ReviewDto>>(_reviewRepository.GetReviews());
+                return Ok(reviews);
             }
-
-            return Ok(reviews); // return pokemons
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error retrieving reviews");
+            }
         }
 
         // get review by id
         [HttpGet("{reviewId}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Review))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ReviewDto))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetReview(int reviewId)
         {
-            if (!_reviewRepository.ReviewExists(reviewId))
+            try
             {
-                return NotFound(); // return not found if review does not exist
+                if (!_reviewRepository.ReviewExists(reviewId))
+                {
+                    return NotFound();
+                }
+
+                var review = _mapper.Map<ReviewDto>(_reviewRepository.GetReview(reviewId));
+                return Ok(review);
             }
-
-            var review = _mapper.Map<ReviewDto>(_reviewRepository.GetReview(reviewId)); // map to DTO
-
-            if (!ModelState.IsValid)
+            catch (Exception ex)
             {
-                return BadRequest(ModelState); // return bad request if model state is invalid
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error retrieving review");
             }
-
-            return Ok(review); // return review
         }
 
+        // get reviews by pokemon id
         [HttpGet("pokemon/{pokeId}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Review))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ReviewDto>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetReviewsForAPokemon(int pokeId)
         {
-            var reviews = _mapper.Map<List<ReviewDto>>(_reviewRepository.GetReviewsOfAPokemon(pokeId)); // map to DTO
-
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);  // return bad request if model state is invalid
+                var reviews = _mapper.Map<List<ReviewDto>>(_reviewRepository.GetReviewsOfAPokemon(pokeId));
+                return Ok(reviews);
             }
-            return Ok(reviews); // return reviews
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error retrieving reviews for Pokémon");
+            }
         }
 
+        // create review
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult CreateReview([FromQuery] int reviewerId, [FromQuery] int pokeId, [FromBody] ReviewDto reviewCreate)
         {
             try
             {
                 if (reviewCreate == null)
                 {
-                    return BadRequest(ModelState); // return bad request if input is null
+                    return BadRequest("Invalid input");
                 }
 
-                // check if the review already exists
-                var reviews = _reviewRepository.GetReviews()
-                    .Where(c => c.Title.Trim().ToUpper() == reviewCreate.Title.TrimEnd().ToUpper())
-                    .FirstOrDefault();
+                var existingReview = _reviewRepository.GetReviews()
+                    .FirstOrDefault(c => c.Title.Trim().ToUpper() == reviewCreate.Title.TrimEnd().ToUpper());
 
-                if (reviews != null)
+                if (existingReview != null)
                 {
-                    ModelState.AddModelError("", "review already exists");
-                    return StatusCode(StatusCodes.Status422UnprocessableEntity, ModelState); // return conflict if review exists
+                    ModelState.AddModelError("", "Review already exists");
+                    return StatusCode(StatusCodes.Status422UnprocessableEntity, ModelState);
                 }
 
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState); // return bad request if model state is invalid
-                }
-
-                var reviewMap = _mapper.Map<Review>(reviewCreate); // map dto to model
-
-                reviewMap.Pokemon = _pokemonRepository.GetPokemon(pokeId); // assign pokemon to review
-                reviewMap.Reviewer = _reviewerRepository.GetReviewer(reviewerId); // assign reviewer to review
+                var reviewMap = _mapper.Map<Review>(reviewCreate);
+                reviewMap.Pokemon = _pokemonRepository.GetPokemon(pokeId);
+                reviewMap.Reviewer = _reviewerRepository.GetReviewer(reviewerId);
 
                 if (!_reviewRepository.CreateReview(reviewMap))
                 {
-                    ModelState.AddModelError("", "something went wrong while saving");
-                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState); // return server error if save fails
+                    ModelState.AddModelError("", "Error saving review");
+                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
                 }
 
-                return Ok("successfully created"); // return success message
+                return NoContent();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return StatusCode(StatusCodes.Status500InternalServerError, "something went wrong while creating the review"); // return server error
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error creating review");
             }
         }
 
+        // update review
         [HttpPut("{reviewId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult UpdateReview(int reviewId, [FromBody] ReviewDto updateReview)
         {
-            if (updateReview == null)
+            try
             {
-                return BadRequest(ModelState);
-            }
+                if (updateReview == null)
+                {
+                    return BadRequest("Invalid input");
+                }
 
-            if (reviewId != updateReview.Id)
+                if (reviewId != updateReview.Id)
+                {
+                    return BadRequest("ID mismatch");
+                }
+
+                if (!_reviewRepository.ReviewExists(reviewId))
+                {
+                    return NotFound();
+                }
+
+                var reviewMap = _mapper.Map<Review>(updateReview);
+
+                if (!_reviewRepository.UpdateReview(reviewMap))
+                {
+                    ModelState.AddModelError("", "Error updating review");
+                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error updating review");
             }
-
-            if (!_reviewRepository.ReviewExists(reviewId))
-            {
-                return NotFound(StatusCodes.Status400BadRequest);
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(StatusCodes.Status400BadRequest);
-            }
-
-            var reviewMap = _mapper.Map<Review>(updateReview);
-
-            if (!_reviewRepository.UpdateReview(reviewMap))
-            {
-                ModelState.AddModelError(" ", "Something went wrong updating review");
-                return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
-            }
-
-            return Ok("Success!");
         }
 
+        // delete review
         [HttpDelete("{reviewId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult DeleteReview(int reviewId)
         {
-            if (!_reviewRepository.ReviewExists(reviewId))
+            try
             {
-                return NotFound();
+                if (!_reviewRepository.ReviewExists(reviewId))
+                {
+                    return NotFound();
+                }
+
+                var reviewToDelete = _reviewRepository.GetReview(reviewId);
+
+                if (!_reviewRepository.DeleteReview(reviewToDelete))
+                {
+                    ModelState.AddModelError("", "Error deleting review");
+                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+                }
+
+                return NoContent();
             }
-
-            var reviewToDelete = _reviewRepository.GetReview(reviewId);
-
-            if (!ModelState.IsValid)
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error deleting review");
             }
-
-            if (!_reviewRepository.DeleteReview(reviewToDelete))
-            {
-                ModelState.AddModelError("", "Something went wrong deleting review");
-            }
-
-            return NoContent();
         }
     }
 }

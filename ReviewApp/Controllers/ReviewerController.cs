@@ -7,15 +7,13 @@ using ReviewApp.Repository;
 
 namespace ReviewApp.Controllers
 {
-    // define route and API controller attributes
     [Route("api/[controller]")]
     [ApiController]
     public class ReviewerController : Controller
     {
-        private readonly IReviewerRepository _reviewerRepository; // repo for data access
-        private readonly IMapper _mapper; // automapper for DTO conversion
+        private readonly IReviewerRepository _reviewerRepository;
+        private readonly IMapper _mapper;
 
-        // constructor for injecting dependencies
         public ReviewerController(IReviewerRepository reviewerRepository, IMapper mapper)
         {
             _reviewerRepository = reviewerRepository;
@@ -24,163 +22,179 @@ namespace ReviewApp.Controllers
 
         // get all reviewers
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Reviewer>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ReviewerDto>))]
         public IActionResult GetReviewers()
         {
-            var reviewers = _mapper.Map<List<ReviewerDto>>(_reviewerRepository.GetReviewers()); // map to DTO
-
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState); // return bad request if model state is invalid
+                var reviewers = _mapper.Map<List<ReviewerDto>>(_reviewerRepository.GetReviewers());
+                return Ok(reviewers);
             }
-
-            return Ok(reviewers); // return reviewers
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error retrieving reviewers");
+            }
         }
 
         // get reviewer by id
         [HttpGet("{reviewerId}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Reviewer))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ReviewerDto))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetReviewer(int reviewerId)
         {
-            if (!_reviewerRepository.ReviewerExists(reviewerId))
+            try
             {
-                return NotFound(); // return not found if reviewer does not exist
+                if (!_reviewerRepository.ReviewerExists(reviewerId))
+                {
+                    return NotFound();
+                }
+
+                var reviewer = _mapper.Map<ReviewerDto>(_reviewerRepository.GetReviewer(reviewerId));
+                return Ok(reviewer);
             }
-
-            var reviewer = _mapper.Map<ReviewerDto>(_reviewerRepository.GetReviewer(reviewerId)); // map to DTO
-
-            if (!ModelState.IsValid)
+            catch (Exception ex)
             {
-                return BadRequest(ModelState); // return bad request if model state is invalid
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error retrieving reviewer");
             }
-
-            return Ok(reviewer); // return reviewer
         }
 
-        [HttpGet ("{reviewerId}/reviews")]
+        // get reviews by reviewer id
+        [HttpGet("{reviewerId}/reviews")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ReviewDto>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetReviewsByAReviewer(int reviewerId)
         {
-            if (!_reviewerRepository.ReviewerExists(reviewerId))
+            try
             {
-                return NotFound(); // return not found if reviewer does not exist
-            }
-            var reviews = _mapper.Map<List<ReviewDto>>(_reviewerRepository.GetReviewsByReviewer(reviewerId)); // map to DTO
+                if (!_reviewerRepository.ReviewerExists(reviewerId))
+                {
+                    return NotFound();
+                }
 
-            if (!ModelState.IsValid)
+                var reviews = _mapper.Map<List<ReviewDto>>(_reviewerRepository.GetReviewsByReviewer(reviewerId));
+                return Ok(reviews);
+            }
+            catch (Exception ex)
             {
-                return BadRequest(ModelState); // return bad request if model state is invalid
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error retrieving reviews");
             }
-
-            return Ok(reviews); // return reviewers
         }
 
+        // create reviewer
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult CreateReviewer([FromBody] ReviewerDto reviewerCreate)
         {
             try
             {
                 if (reviewerCreate == null)
                 {
-                    return BadRequest(ModelState); // return bad request if input is null
+                    return BadRequest("Invalid input");
                 }
 
-                // check if the reviewer already exists
-                var country = _reviewerRepository.GetReviewers()
-                    .Where(c => c.LastName.Trim().ToUpper() == reviewerCreate.LastName.TrimEnd().ToUpper())
-                    .FirstOrDefault();
+                var existingReviewer = _reviewerRepository.GetReviewers()
+                    .FirstOrDefault(c => c.LastName.Trim().ToUpper() == reviewerCreate.LastName.TrimEnd().ToUpper());
 
-                if (country != null)
+                if (existingReviewer != null)
                 {
-                    ModelState.AddModelError("", "reviewer already exists");
-                    return StatusCode(StatusCodes.Status422UnprocessableEntity, ModelState); // return conflict if reviewer exists
+                    ModelState.AddModelError("", "Reviewer already exists");
+                    return StatusCode(StatusCodes.Status422UnprocessableEntity, ModelState);
                 }
 
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState); // return bad request if model state is invalid
-                }
-
-                var reviewerMap = _mapper.Map<Reviewer>(reviewerCreate); // map dto to model
+                var reviewerMap = _mapper.Map<Reviewer>(reviewerCreate);
 
                 if (!_reviewerRepository.CreateReviewer(reviewerMap))
                 {
-                    ModelState.AddModelError("", "something went wrong while saving");
-                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState); // return server error if save fails
+                    ModelState.AddModelError("", "Error saving reviewer");
+                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
                 }
 
-                return Ok("successfully created"); // return success message
+                return NoContent();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return StatusCode(StatusCodes.Status500InternalServerError, "something went wrong while creating the reviewer"); // return server error
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error creating reviewer");
             }
         }
 
+        // update reviewer
         [HttpPut("{reviewerId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult UpdateReviewer(int reviewerId, [FromBody] ReviewerDto updateReviewer)
         {
-            if (updateReviewer == null)
+            try
             {
-                return BadRequest(ModelState);
-            }
+                if (updateReviewer == null)
+                {
+                    return BadRequest("Invalid input");
+                }
 
-            if (reviewerId != updateReviewer.Id)
+                if (reviewerId != updateReviewer.Id)
+                {
+                    return BadRequest("ID mismatch");
+                }
+
+                if (!_reviewerRepository.ReviewerExists(reviewerId))
+                {
+                    return NotFound();
+                }
+
+                var reviewerMap = _mapper.Map<Reviewer>(updateReviewer);
+
+                if (!_reviewerRepository.UpdateReviewer(reviewerMap))
+                {
+                    ModelState.AddModelError("", "Error updating reviewer");
+                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error updating reviewer");
             }
-
-            if (!_reviewerRepository.ReviewerExists(reviewerId))
-            {
-                return NotFound();
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest();
-            }
-
-            var reviewerMap = _mapper.Map<Reviewer>(updateReviewer);
-
-            if (!_reviewerRepository.updateReviewer(reviewerMap))
-            {
-                ModelState.AddModelError(" ", "Something went wrong updating reviewer");
-                return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
-            }
-
-            return Ok("Success!");
         }
 
+        // delete reviewer
         [HttpDelete("{reviewerId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult DeleteReviewer(int reviewerId)
         {
-            if (!_reviewerRepository.ReviewerExists(reviewerId))
+            try
             {
-                return NotFound();
+                if (!_reviewerRepository.ReviewerExists(reviewerId))
+                {
+                    return NotFound();
+                }
+
+                var reviewerToDelete = _reviewerRepository.GetReviewer(reviewerId);
+
+                if (!_reviewerRepository.DeleteReviewer(reviewerToDelete))
+                {
+                    ModelState.AddModelError("", "Error deleting reviewer");
+                    return StatusCode(StatusCodes.Status500InternalServerError, ModelState);
+                }
+
+                return NoContent();
             }
-
-            var reviewerToDelete = _reviewerRepository.GetReviewer(reviewerId);
-
-            if (!ModelState.IsValid)
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                Console.WriteLine(ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error deleting reviewer");
             }
-
-            if (!_reviewerRepository.DeleteReviewer(reviewerToDelete))
-            {
-                ModelState.AddModelError("", "Something went wrong deleting reviewer");
-            }
-
-            return NoContent();
         }
     }
 }
