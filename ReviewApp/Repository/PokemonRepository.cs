@@ -1,4 +1,5 @@
 ﻿using ReviewApp.Data;
+using ReviewApp.Dto;
 using ReviewApp.Interfaces;
 using ReviewApp.Models;
 using System.Reflection.Metadata.Ecma335;
@@ -83,6 +84,13 @@ namespace ReviewApp.Repository
             return _context.Pokemon
                 .OrderBy(p => p.Id) // order Pokemon by ID
                 .ToList(); // return the list of all Pokemon
+        }
+
+        public Pokemon GetPokemonTrimToUpper(PokemonDto pokemonCreate)
+        {
+            return GetPokemons().Where(c => c.Name.Trim().ToUpper() == pokemonCreate.Name.TrimEnd()
+            .ToUpper()).FirstOrDefault(); // return first match or null if not found
+
         }
 
         public bool PokemonExists(int pokeId)

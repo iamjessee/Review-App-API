@@ -100,10 +100,10 @@ namespace ReviewApp.Controllers
                     return BadRequest("Invalid input");
                 }
 
-                var existingPokemon = _pokemonRepository.GetPokemons()
-                    .FirstOrDefault(c => c.Name.Trim().ToUpper() == pokemonCreate.Name.TrimEnd().ToUpper());
+                var pokemons = _pokemonRepository.GetPokemonTrimToUpper(pokemonCreate);
 
-                if (existingPokemon != null)
+
+                if (pokemons != null)
                 {
                     ModelState.AddModelError("", "Pokemon already exists");
                     return StatusCode(StatusCodes.Status422UnprocessableEntity, ModelState);
