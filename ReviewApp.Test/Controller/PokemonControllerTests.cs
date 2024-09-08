@@ -26,27 +26,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemons_ReturnsOk()
-        {
-            // arrange
-            var pokemons = A.Fake<ICollection<Pokemon>>();
-            var pokemonList = A.Fake<List<PokemonDto>>();
-
-            A.CallTo(() => _pokemonRepository.GetPokemons()).Returns(pokemons);
-            A.CallTo(() => _mapper.Map<List<PokemonDto>>(pokemons)).Returns(pokemonList);
-
-            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
-
-            // act
-            var result = controller.GetPokemons() as OkObjectResult;
-
-            //assert
-            result.Should().NotBeNull();
-            result.StatusCode.Should().Be(StatusCodes.Status200OK);
-        }
-
-        [Fact]
-        public void PokemonController_GetPokemon_ReturnOK()
+        public void PokemonController_GetPokemons_ReturnOK()
         {
             // arrange
             var pokemons = A.Fake<ICollection<PokemonDto>>();
@@ -57,66 +37,195 @@ namespace ReviewApp.Test.Controller
             var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
 
             // act
-            var result = controller.GetPokemons() as OkObjectResult;
+            var result = controller.GetPokemons();
 
             // assert
-            result.Should().NotBeNull();
-            result.Should().BeOfType(typeof(OkObjectResult));
-            result.StatusCode.Should().Be(StatusCodes.Status200OK);
-            result.Value.Should().BeEquivalentTo(pokemonList);
+            result.Should().BeOfType<OkObjectResult>()
+                .Which.Value.Should().BeEquivalentTo(pokemonList);
+            result.As<OkObjectResult>().StatusCode.Should().Be(StatusCodes.Status200OK);
         }
 
         [Fact]
-        public void PokemonController_GetPokemon_Returns500OnException()
+        public void PokemonController_GetPokemons_Returns500OnException()
         {
             // arrange
             A.CallTo(() => _pokemonRepository.GetPokemons()).Throws(new Exception());
 
             var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
 
-            //act
-            var result = controller.GetPokemons() as ObjectResult;
+            // act
+            var result = controller.GetPokemons();
 
-            //assert
-            result.Should().NotBeNull();
-            result.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+            // assert
+            result.Should().BeOfType<ObjectResult>()
+                .Which.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
         }
 
         [Fact]
-        public void PokemonController_CreatePoke_ReturnOK()
+        public void PokemonController_GetPokemon_ReturnOk()
+        {
+            // arrange
+            int pokeId = 1;
+            var pokemon = A.Fake<Pokemon>();
+            var pokemonDto = A.Fake<PokemonDto>();
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokeId)).Returns(true);
+            A.CallTo(() => _pokemonRepository.GetPokemon(pokeId)).Returns(pokemon);
+            A.CallTo(() => _mapper.Map<PokemonDto>(pokemon)).Returns(pokemonDto);
+
+            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
+
+            // act
+            var result = controller.GetPokemon(pokeId);
+
+            // assert
+            result.Should().BeOfType<OkObjectResult>()
+                .Which.Value.Should().BeEquivalentTo(pokemonDto);
+            result.As<OkObjectResult>().StatusCode.Should().Be(StatusCodes.Status200OK);
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemon_Returns404NotFound()
+        {
+            // arrange
+            int pokeId = 1;
+            var pokemon = A.Fake<Pokemon>();
+            var pokemonDto = A.Fake<PokemonDto>();
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokeId)).Returns(false);
+
+            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
+
+            // act
+            var result = controller.GetPokemon(pokeId);
+
+            // assert
+            result.Should().BeOfType<NotFoundResult>()
+                .Which.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemon_Returns500OnException()
+        {
+            // arrange
+            int pokeId = 1;
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokeId)).Returns(true);
+            A.CallTo(() => _pokemonRepository.GetPokemon(pokeId)).Throws(new Exception());
+
+            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
+
+            // act
+            var result = controller.GetPokemon(pokeId);
+
+            // assert
+            result.Should().BeOfType<ObjectResult>()
+                .Which.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemonRating_ReturnsOK()
+        {
+            // arrange
+            int pokeId = 1;
+            var expectedRating = 4.5m;
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokeId)).Returns(true);
+            A.CallTo(() => _pokemonRepository.GetPokemonRating(pokeId)).Returns(expectedRating);
+
+            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
+
+            // act
+            var result = controller.GetPokemonRating(pokeId);
+
+            // assert
+            result.Should().BeOfType<OkObjectResult>();
+            var okResult = result.As<OkObjectResult>();
+            okResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+            okResult.Value.Should().Be(expectedRating);
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemonRating_Returns404NotFound()
+        {
+            // arrange
+            int pokeId = 1;
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokeId)).Returns(false);
+
+            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
+
+            // act
+            var result = controller.GetPokemonRating(pokeId);
+
+            // assert
+            result.Should().BeOfType<NotFoundResult>()
+                .Which.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemonRating_Returns500OnException()
+        {
+            // arrange
+            int pokeId = 1;
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokeId)).Returns(true);
+            A.CallTo(() => _pokemonRepository.GetPokemonRating(pokeId)).Throws(new Exception());
+
+            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
+
+            // act
+            var result = controller.GetPokemonRating(pokeId);
+
+            // assert
+            result.Should().BeOfType<ObjectResult>()
+               .Which.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        }
+
+        [Fact]
+        public void PokemonController_CreatePokemon_ReturnNoContent_OnSuccess()
         {
             // arrange
             int ownerId = 1;
-            int catId = 2;
-            var pokemonMap = A.Fake<Pokemon>();
-            var pokemon = A.Fake<Pokemon>();
+            int categoryId = 2;
             var pokemonCreate = A.Fake<PokemonDto>();
-            var pokemons = A.Fake<ICollection<PokemonDto>>();
-            var pokemonList = A.Fake<IList<PokemonDto>>();
+            var pokemonMap = A.Fake<Pokemon>();
 
-            A.CallTo(() => _pokemonRepository.GetPokemonTrimToUpper(pokemonCreate)).Returns(pokemon);
-            A.CallTo(() => _mapper.Map<Pokemon>(pokemonCreate)).Returns(pokemon);
-            A.CallTo(() => _pokemonRepository.CreatePokemon(ownerId, catId, pokemon)).Returns(true);
+            A.CallTo(() => _pokemonRepository.GetPokemonTrimToUpper(pokemonCreate)).Returns(null);
+            A.CallTo(() => _mapper.Map<Pokemon>(pokemonCreate)).Returns(pokemonMap);
+            A.CallTo(() => _pokemonRepository.CreatePokemon(ownerId, categoryId, pokemonMap)).Returns(true);
 
             var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
 
             //act
-            var result = controller.CreatePokemon(ownerId, catId, pokemonCreate);
+            var result = controller.CreatePokemon(ownerId, categoryId, pokemonCreate);
 
             // assert
-            result.Should().NotBeNull();
+            result.Should().BeOfType<NoContentResult>();
+            (result as NoContentResult).StatusCode.Should().Be(StatusCodes.Status204NoContent);
         }
 
         [Fact]
-        public void PokemonController_CreatePoke_ReturnNoContent()
+        public void PokemonController_CreatePokemon_ReturnUnprocessableEntity_IfPokemonExists()
         {
             // arrange
+            int ownerId = 1;
+            int categoryId = 2;
+            var pokemonCreate = A.Fake<PokemonDto>();
+            var pokemonMap = A.Fake<Pokemon>();
 
+            A.CallTo(() => _pokemonRepository.GetPokemonTrimToUpper(pokemonCreate)).Returns(pokemonMap);
+            A.CallTo(() => _mapper.Map<Pokemon>(pokemonCreate)).Returns(pokemonMap);
+            A.CallTo(() => _pokemonRepository.CreatePokemon(ownerId, categoryId, pokemonMap)).Returns(false);
+
+            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
 
             //act
+            var result = controller.CreatePokemon(ownerId, categoryId, pokemonCreate);
 
-
-            //assert
+            // assert
+            result.Should().BeOfType<ObjectResult>()
+                .Which.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
         }
     }
 }
