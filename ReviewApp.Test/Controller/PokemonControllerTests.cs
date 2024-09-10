@@ -62,7 +62,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemon_ReturnOk()
+        public void PokemonController_GetPokemon_Return200Ok()
         {
             // arrange
             int pokeId = 1;
@@ -105,7 +105,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemon_Returns500OnException()
+        public void PokemonController_GetPokemon_Returns500InternalServerErrorOnException()
         {
             // arrange
             int pokeId = 1;
@@ -124,7 +124,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemonRating_ReturnsOK()
+        public void PokemonController_GetPokemonRating_Returns200OK()
         {
             // arrange
             int pokeId = 1;
@@ -164,7 +164,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemonRating_Returns500OnException()
+        public void PokemonController_GetPokemonRating_Returns500InternalServerErrorOnException()
         {
             // arrange
             int pokeId = 1;
@@ -183,7 +183,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_CreatePokemon_ReturnNoContent_OnSuccess()
+        public void PokemonController_CreatePokemon_Return204NoContent_OnSuccess()
         {
             // arrange
             int ownerId = 1;
@@ -207,6 +207,29 @@ namespace ReviewApp.Test.Controller
 
         [Fact]
         public void PokemonController_CreatePokemon_Return422UnprocessableEntity_ForExistingPokemon()
+        {
+            // arrange
+            int ownerId = 1;
+            int categoryId = 2;
+            var pokemonCreate = A.Fake<PokemonDto>();
+            var pokemonMap = A.Fake<Pokemon>();
+
+            A.CallTo(() => _pokemonRepository.GetPokemonTrimToUpper(pokemonCreate)).Returns(pokemonMap);
+            A.CallTo(() => _mapper.Map<Pokemon>(pokemonCreate)).Returns(pokemonMap);
+            A.CallTo(() => _pokemonRepository.CreatePokemon(ownerId, categoryId, pokemonMap)).Returns(false);
+
+            var controller = new PokemonController(_pokemonRepository, _reviewRepository, _mapper);
+
+            //act
+            var result = controller.CreatePokemon(ownerId, categoryId, pokemonCreate);
+
+            // assert
+            result.Should().BeOfType<ObjectResult>()
+                .Which.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        }
+
+        [Fact]
+        public void PokemonController_CreatePokemon_Return500InternalServerError_ForExistingPokemon()
         {
             // arrange
             int ownerId = 1;
