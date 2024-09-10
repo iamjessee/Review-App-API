@@ -206,7 +206,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_CreatePokemon_ReturnUnprocessableEntity_IfPokemonExists()
+        public void PokemonController_CreatePokemon_Return422UnprocessableEntity_ForExistingPokemon()
         {
             // arrange
             int ownerId = 1;
