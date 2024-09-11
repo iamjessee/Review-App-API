@@ -26,7 +26,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemons_ReturnOK()
+        public void GetPokemons_ValidRequest_ReturnsOkResult()
         {
             // arrange
             var pokemons = A.Fake<ICollection<PokemonDto>>();
@@ -46,7 +46,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemons_Returns500OnException()
+        public void GetPokemons_ExceptionThrown_ReturnsInternalServerError()
         {
             // arrange
             A.CallTo(() => _pokemonRepository.GetPokemons()).Throws(new Exception());
@@ -62,7 +62,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemon_Return200Ok()
+        public void GetPokemon_ValidId_ReturnsOkResult()
         {
             // arrange
             int pokeId = 1;
@@ -85,7 +85,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemon_Returns404NotFound()
+        public void GetPokemon_InvalidId_ReturnsNotFound()
         {
             // arrange
             int pokeId = 1;
@@ -103,7 +103,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemon_Returns500InternalServerErrorOnException()
+        public void GetPokemon_ExceptionThrown_ReturnsInternalServerError()
         {
             // arrange
             int pokeId = 1;
@@ -122,7 +122,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemonRating_Returns200OK()
+        public void GetPokemonRating_ValidId_ReturnsOkResult()
         {
             // arrange
             int pokeId = 1;
@@ -144,7 +144,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemonRating_Returns404NotFound()
+        public void GetPokemonRating_InvalidId_ReturnsNotFound()
         {
             // arrange
             int pokeId = 1;
@@ -162,7 +162,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_GetPokemonRating_Returns500InternalServerErrorOnException()
+        public void GetPokemonRating_ExceptionThrown_ReturnsInternalServerError()
         {
             // arrange
             int pokeId = 1;
@@ -181,7 +181,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_CreatePokemon_Return204NoContent_OnSuccess()
+        public void CreatePokemon_ValidInput_ReturnsNoContent()
         {
             // arrange
             int ownerId = 1;
@@ -204,7 +204,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_CreatePokemon_Return400BadRequest_ForNullInput()
+        public void CreatePokemon_NullInput_ReturnsBadRequest()
         {
             // arrange
             int ownerId = 1;
@@ -222,7 +222,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_CreatePokemon_Return422UnprocessableEntity_ForExistingPokemon()
+        public void CreatePokemon_ExistingPokemon_ReturnsUnprocessableEntity()
         {
             // arrange
             int ownerId = 1;
@@ -245,7 +245,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_CreatePokemon_Return500InternalServerError()
+        public void CreatePokemon_FailedCreation_ReturnsInternalServerError()
         {
             // arrange
             int ownerId = 1;
@@ -268,7 +268,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_CreatePokemon_Return500InternalServerErrorOnException()
+        public void CreatePokemon_ExceptionThrown_ReturnsInternalServerError()
         {
             // arrange
             int ownerId = 1;
@@ -288,7 +288,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_DeletePokemon_Return204NoContent_OnSuccess()
+        public void DeletePokemon_ValidId_ReturnsNoContent()
         {
             // arrange
             int pokeId = 1;
@@ -312,7 +312,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_DeletePokemon_Return404NotFound()
+        public void DeletePokemon_InvalidId_ReturnsNotFound()
         {
             // arrange
             int pokeId = 1;
@@ -330,7 +330,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_DeletePokemon_Return500NoInternalServerError_OnErrorDeletingReviews()
+        public void DeletePokemon_FailedReviewDeletion_ReturnsInternalServerError()
         {
             // arrange
             int pokeId = 1;
@@ -353,7 +353,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_DeletePokemon_Return500NoInternalServerError_OnErrorDeletingPokemon()
+        public void DeletePokemon_FailedPokemonDeletion_ReturnsInternalServerError()
         {
             // arrange
             int pokeId = 1;
@@ -377,7 +377,7 @@ namespace ReviewApp.Test.Controller
         }
 
         [Fact]
-        public void PokemonController_DeletePokemon_Return500NoInternalServerError_OnException()
+        public void DeletePokemon_ExceptionThrown_ReturnsInternalServerError()
         {
             // arrange
             int pokeId = 1;
